@@ -1,0 +1,10 @@
+[package]
+name = "boolean_function_extender"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+numext-fixed-uint = "0.1.6"
+fast-boolean-anf-transform = "0.0.2"
+rayon = "1.10.0"
+gen-combinations = "0.1.0"
