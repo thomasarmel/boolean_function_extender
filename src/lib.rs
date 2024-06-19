@@ -8,21 +8,21 @@ pub trait BooleanFunctionTester {
 
     const NUM_VARIABLES: usize;
 
-    fn fast_bool_anf_transform_unsigned(rule_number: Self::UnsignedRepr, num_variables_function: usize) -> Self::UnsignedRepr;
+    fn fast_bool_anf_transform_unsigned(rule_number: &Self::UnsignedRepr, num_variables_function: usize) -> Self::UnsignedRepr;
 
-    fn get_function_degree(rule_number: Self::UnsignedRepr) -> usize;
+    fn get_function_degree(rule_number: &Self::UnsignedRepr) -> usize;
 
-    fn is_strict_avalanche_criterion_ok(rule_number: Self::UnsignedRepr) -> bool;
+    fn is_strict_avalanche_criterion_ok(rule_number: &Self::UnsignedRepr) -> bool;
 
-    fn compute_cellular_automata_rule(rule_number: Self::UnsignedRepr, input_bits: u32) -> bool;
+    fn compute_cellular_automata_rule(rule_number: &Self::UnsignedRepr, input_bits: u32) -> bool;
 
-    fn is_function_balanced(rule_number: Self::UnsignedRepr) -> bool;
+    fn is_function_balanced(rule_number: &Self::UnsignedRepr) -> bool;
 
-    fn is_first_order_correlation_immune(rule_number: Self::UnsignedRepr) -> bool;
+    fn is_first_order_correlation_immune(rule_number: &Self::UnsignedRepr) -> bool;
 
-    fn fast_walsh_transform(rule_number: Self::UnsignedRepr, w: u32) -> i32;
+    fn fast_walsh_transform(rule_number: &Self::UnsignedRepr, w: u32) -> i32;
 
-    fn is_propagation_criterion_deg_k_ok(rule_number: Self::UnsignedRepr, k: usize) -> bool;
+    fn is_propagation_criterion_deg_k_ok(rule_number: &Self::UnsignedRepr, k: usize) -> bool;
 
     #[inline]
     fn fast_binary_dot_product(a: u32, b: u32) -> u32 {

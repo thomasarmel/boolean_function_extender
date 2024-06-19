@@ -6,27 +6,30 @@ use boolean_function_extender::u32_tester::U32Tester;
 use boolean_function_extender::u512_tester::U512Tester;
 
 const RING_SIZE: usize = 9;
-const RULE_NUMBER: u32 = 100/*1438886595*/;
+const RULE_NUMBER: u32 = 1438886595;
 
 fn main() {
-    let res = (0../*=u32::MAX*/10000000u32).into_par_iter().map(|rule_number| {
+    let res = (0..=u32::MAX).into_par_iter().map(|rule_number| {
         let output_9_rule_number = extend_rule_5_to_9(rule_number);
-        if U32Tester::is_propagation_criterion_deg_k_ok(rule_number, 3) {
-            println!("{} {}", rule_number, output_9_rule_number);
-        }
-        if U512Tester::is_propagation_criterion_deg_k_ok(output_9_rule_number, 2) == U32Tester::is_propagation_criterion_deg_k_ok(rule_number, 2) {
+        if U512Tester::is_strict_avalanche_criterion_ok(&output_9_rule_number) == U32Tester::is_strict_avalanche_criterion_ok(&rule_number)
+            && U512Tester::is_first_order_correlation_immune(&output_9_rule_number) == U32Tester::is_first_order_correlation_immune(&rule_number)
+            && U512Tester::is_function_balanced(&output_9_rule_number) == U32Tester::is_function_balanced(&rule_number)
+            && U512Tester::is_propagation_criterion_deg_k_ok(&output_9_rule_number, 2) == U32Tester::is_propagation_criterion_deg_k_ok(&rule_number, 2)
+            && U512Tester::is_propagation_criterion_deg_k_ok(&output_9_rule_number, 3) == U32Tester::is_propagation_criterion_deg_k_ok(&rule_number, 3)
+            && U512Tester::is_propagation_criterion_deg_k_ok(&output_9_rule_number, 4) == U32Tester::is_propagation_criterion_deg_k_ok(&rule_number, 4)
+            && U512Tester::is_propagation_criterion_deg_k_ok(&output_9_rule_number, 5) == U32Tester::is_propagation_criterion_deg_k_ok(&rule_number, 5) {
             1
         } else {
             0
         }
     }).count();
     println!("equal {}", res);
-    let output_rule_number = extend_rule_5_to_9(RULE_NUMBER);
+    /*let output_rule_number = extend_rule_5_to_9(RULE_NUMBER);
     println!("{}", output_rule_number);
-    let anf = U512Tester::fast_bool_anf_transform_unsigned(output_rule_number.clone(), 9);
+    let anf = U512Tester::fast_bool_anf_transform_unsigned(&output_rule_number, 9);
     println!("{}", anf);
-    println!("degree {}", U512Tester::get_function_degree(output_rule_number));
-    println!("original {}", U32Tester::get_function_degree(RULE_NUMBER));
+    println!("degree {}", U512Tester::get_function_degree(&output_rule_number));
+    println!("original {}", U32Tester::get_function_degree(&RULE_NUMBER));*/
 }
 
 fn extend_rule_5_to_9(rule_number: u32) -> U512 {
