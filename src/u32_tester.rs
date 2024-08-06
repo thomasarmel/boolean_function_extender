@@ -64,10 +64,14 @@ impl BooleanFunctionTester for U32Tester {
     fn fast_walsh_transform(rule_number: &Self::UnsignedRepr, w: u32) -> i32 {
         let max_input_value = unsafe { _bzhi_u32(u32::MAX, Self::NUM_VARIABLES as u32) };
         (0..=max_input_value).map(|x| {
-            if (Self::compute_cellular_automata_rule(rule_number, x) as u32 + Self::fast_binary_dot_product(w, x as u32)) & 1 == 0 { // % modulo 2
-                1
+            if Self::compute_cellular_automata_rule(rule_number, x) {
+                if Self::fast_binary_dot_product(w, x as u32) & 1 == 0 { // % modulo 2
+                    1
+                } else {
+                    -1
+                }
             } else {
-                -1
+                0
             }
         }).sum()
     }
