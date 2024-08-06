@@ -9,7 +9,7 @@ const RING_SIZE: usize = 9;
 const RULE_NUMBER: u32 = 1438886595;
 
 fn main() {
-    let res = (0..=u32::MAX).into_par_iter().map(|rule_number| {
+    let res: usize = (0..=u32::MAX).into_par_iter().map(|rule_number| {
         let output_9_rule_number = extend_rule_5_to_9(rule_number);
         if U512Tester::is_strict_avalanche_criterion_ok(&output_9_rule_number) == U32Tester::is_strict_avalanche_criterion_ok(&rule_number)
             && U512Tester::is_first_order_correlation_immune(&output_9_rule_number) == U32Tester::is_first_order_correlation_immune(&rule_number)
@@ -22,7 +22,7 @@ fn main() {
         } else {
             0
         }
-    }).count();
+    }).sum();
     println!("equal {}", res);
     /*let output_rule_number = extend_rule_5_to_9(RULE_NUMBER);
     println!("{}", output_rule_number);
