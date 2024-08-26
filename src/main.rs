@@ -7,15 +7,14 @@ use boolean_function_extender::u32_tester::U32Tester;
 use boolean_function_extender::u512_tester::U512Tester;
 
 const RING_SIZE: usize = 9;
-const RULE_NUMBER: u32 = 1438886595;
 
 fn main() {
-    /*let args: Vec<String> = env::args().collect();
+    let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
         eprintln!("Usage: {} <rounds_count>", args[0]);
         return;
     }
-    let rounds_count: usize = match args[1].parse() {
+    let rounds_count: u32 = match args[1].parse() {
         Ok(value) => value,
         Err(_) => {
             eprintln!("Invalid rounds count, must be a positive integer");
@@ -23,88 +22,109 @@ fn main() {
         }
     };
 
+    let mut round_number = 0;
     let mut total_res_sac = 0;
-
-    for round_number in 0..rounds_count {
+    let mut total_res_foci = 0;
+    let mut total_res_balanced = 0;
+    let mut total_res_propagation_2 = 0;
+    let mut total_res_propagation_3 = 0;
+    let mut total_res_propagation_4 = 0;
+    let mut total_res_degree = 0;
+    let mut ranges = (0..=u32::MAX).into_iter().peekable();
+    while ranges.peek().is_some() {
         println!("Round {}", round_number);
+        round_number += 1;
+        let primal_functions: Vec<u32> = ranges.by_ref().take((u32::MAX / rounds_count) as usize).collect();
+        println!("Generating extended functions");
+        let extended_booleans: Vec<(u32, U512)> = primal_functions.into_par_iter().map(|rule_number| {
+            (rule_number, extend_rule_5_to_9(rule_number))
+        }).collect();
+        println!("Generated extended functions");
 
-    }*/
+        println!("Testing strict avalanche criterion (SAC)");
+        let res_sac: usize = extended_booleans.par_iter().map(|(rule_number, output_9_rule_number)| {
+            if U512Tester::is_strict_avalanche_criterion_ok(output_9_rule_number) == U32Tester::is_strict_avalanche_criterion_ok(rule_number) {
+                1
+            } else {
+                0
+            }
+        }).sum();
+        println!("equal {}", res_sac);
+        total_res_sac += res_sac;
 
-    println!("Generating extended functions");
-    let extended_booleans: Vec<(u32, U512)> = (0..=u32::MAX/100).into_par_iter().map(|rule_number| {
-        (rule_number, extend_rule_5_to_9(rule_number))
-    }).collect();
-    println!("Generated extended functions");
+        println!("Testing first order correlation immunity");
+        let res_foci: usize = extended_booleans.par_iter().map(|(rule_number, output_9_rule_number)| {
+            if U512Tester::is_first_order_correlation_immune(output_9_rule_number) == U32Tester::is_first_order_correlation_immune(rule_number) {
+                1
+            } else {
+                0
+            }
+        }).sum();
+        println!("equal {}", res_foci);
+        total_res_foci += res_foci;
 
-    println!("Testing strict avalanche criterion (SAC)");
-    let res_sac: usize = extended_booleans.par_iter().map(|(rule_number, output_9_rule_number)| {
-        if U512Tester::is_strict_avalanche_criterion_ok(output_9_rule_number) == U32Tester::is_strict_avalanche_criterion_ok(rule_number) {
-            1
-        } else {
-            0
-        }
-    }).sum();
-    println!("equal {}", res_sac);
+        println!("Testing balanced");
+        let res_balanced: usize = extended_booleans.par_iter().map(|(rule_number, output_9_rule_number)| {
+            if U512Tester::is_function_balanced(output_9_rule_number) == U32Tester::is_function_balanced(rule_number) {
+                1
+            } else {
+                0
+            }
+        }).sum();
+        println!("equal {}", res_balanced);
+        total_res_balanced += res_balanced;
 
-    println!("Testing first order correlation immunity");
-    let res_foci: usize = extended_booleans.par_iter().map(|(rule_number, output_9_rule_number)| {
-        if U512Tester::is_first_order_correlation_immune(output_9_rule_number) == U32Tester::is_first_order_correlation_immune(rule_number) {
-            1
-        } else {
-            0
-        }
-    }).sum();
-    println!("equal {}", res_foci);
+        println!("Testing propagation criterion deg 2");
+        let res_propagation_2: usize = extended_booleans.par_iter().map(|(rule_number, output_9_rule_number)| {
+            if U512Tester::is_propagation_criterion_deg_k_ok(output_9_rule_number, 2) == U32Tester::is_propagation_criterion_deg_k_ok(rule_number, 2) {
+                1
+            } else {
+                0
+            }
+        }).sum();
+        println!("equal {}", res_propagation_2);
+        total_res_propagation_2 += res_propagation_2;
 
-    println!("Testing balanced");
-    let res_balanced: usize = extended_booleans.par_iter().map(|(rule_number, output_9_rule_number)| {
-        if U512Tester::is_function_balanced(output_9_rule_number) == U32Tester::is_function_balanced(rule_number) {
-            1
-        } else {
-            0
-        }
-    }).sum();
-    println!("equal {}", res_balanced);
+        println!("Testing propagation criterion deg 3");
+        let res_propagation_3: usize = extended_booleans.par_iter().map(|(rule_number, output_9_rule_number)| {
+            if U512Tester::is_propagation_criterion_deg_k_ok(output_9_rule_number, 3) == U32Tester::is_propagation_criterion_deg_k_ok(rule_number, 3) {
+                1
+            } else {
+                0
+            }
+        }).sum();
+        println!("equal {}", res_propagation_3);
+        total_res_propagation_3 += res_propagation_3;
 
-    println!("Testing propagation criterion deg 2");
-    let res_propagation_2: usize = extended_booleans.par_iter().map(|(rule_number, output_9_rule_number)| {
-        if U512Tester::is_propagation_criterion_deg_k_ok(output_9_rule_number, 2) == U32Tester::is_propagation_criterion_deg_k_ok(rule_number, 2) {
-            1
-        } else {
-            0
-        }
-    }).sum();
-    println!("equal {}", res_propagation_2);
+        println!("Testing propagation criterion deg 4");
+        let res_propagation_4: usize = extended_booleans.par_iter().map(|(rule_number, output_9_rule_number)| {
+            if U512Tester::is_propagation_criterion_deg_k_ok(output_9_rule_number, 4) == U32Tester::is_propagation_criterion_deg_k_ok(rule_number, 4) {
+                1
+            } else {
+                0
+            }
+        }).sum();
+        println!("equal {}", res_propagation_4);
+        total_res_propagation_4 += res_propagation_4;
 
-    println!("Testing propagation criterion deg 3");
-    let res_propagation_3: usize = extended_booleans.par_iter().map(|(rule_number, output_9_rule_number)| {
-        if U512Tester::is_propagation_criterion_deg_k_ok(output_9_rule_number, 3) == U32Tester::is_propagation_criterion_deg_k_ok(rule_number, 3) {
-            1
-        } else {
-            0
-        }
-    }).sum();
-    println!("equal {}", res_propagation_3);
-
-    println!("Testing propagation criterion deg 4");
-    let res_propagation_4: usize = extended_booleans.par_iter().map(|(rule_number, output_9_rule_number)| {
-        if U512Tester::is_propagation_criterion_deg_k_ok(output_9_rule_number, 4) == U32Tester::is_propagation_criterion_deg_k_ok(rule_number, 4) {
-            1
-        } else {
-            0
-        }
-    }).sum();
-    println!("equal {}", res_propagation_4);
-
-    println!("Testing algebraic degree");
-    let res_degree: usize = extended_booleans.par_iter().map(|(rule_number, output_9_rule_number)| {
-        if U512Tester::get_function_degree(output_9_rule_number) == U32Tester::get_function_degree(rule_number) {
-            1
-        } else {
-            0
-        }
-    }).sum();
-    println!("equal {}", res_degree);
+        println!("Testing algebraic degree");
+        let res_degree: usize = extended_booleans.par_iter().map(|(rule_number, output_9_rule_number)| {
+            if U512Tester::get_function_degree(output_9_rule_number) == U32Tester::get_function_degree(rule_number) {
+                1
+            } else {
+                0
+            }
+        }).sum();
+        println!("equal {}", res_degree);
+        total_res_degree += res_degree;
+    }
+    println!("Total SAC equal {}", total_res_sac);
+    println!("Total FOIC equal {}", total_res_foci);
+    println!("Total balanced equal {}", total_res_balanced);
+    println!("Total propagation criterion deg 2 equal {}", total_res_propagation_2);
+    println!("Total propagation criterion deg 3 equal {}", total_res_propagation_3);
+    println!("Total propagation criterion deg 4 equal {}", total_res_propagation_4);
+    println!("Total degree equal {}", total_res_degree);
 }
 
 fn extend_rule_5_to_9(rule_number: u32) -> U512 {
@@ -152,6 +172,7 @@ fn unsigned_to_bool_array<const S: usize>(number: usize) -> [bool; S] {
     bits
 }
 
+#[allow(dead_code)]
 #[inline(always)]
 fn bool_array_to_unsigned<const S: usize>(bits: [bool; S]) -> usize {
     let mut number = 0;
