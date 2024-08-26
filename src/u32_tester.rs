@@ -36,10 +36,12 @@ impl BooleanFunctionTester for U32Tester {
     }
 
     fn compute_cellular_automata_rule(rule_number: &Self::UnsignedRepr, input_bits: u32) -> bool {
-        let max_input_value = unsafe { _bzhi_u32(u32::MAX, Self::NUM_VARIABLES as u32) };
         #[cfg(debug_assertions)]
-        if input_bits > max_input_value {
-            panic!("Input bits must be less or equal than {}", max_input_value);
+        {
+            let max_input_value = unsafe { _bzhi_u32(u32::MAX, Self::NUM_VARIABLES as u32) };
+            if input_bits > max_input_value {
+                panic!("Input bits must be less or equal than {}", max_input_value);
+            }
         }
         (rule_number & (1 << input_bits)) != 0
     }
