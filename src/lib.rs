@@ -1,4 +1,5 @@
 use std::arch::x86_64::_popcnt32;
+use std::collections::HashMap;
 
 pub mod u512_tester;
 pub mod u32_tester;
@@ -7,6 +8,7 @@ pub trait BooleanFunctionTester {
     type UnsignedRepr;
 
     const NUM_VARIABLES: usize;
+    const MAX_INPUT_VALUE: u32;
 
     fn fast_bool_anf_transform_unsigned(rule_number: &Self::UnsignedRepr, num_variables_function: usize) -> Self::UnsignedRepr;
 
@@ -21,6 +23,8 @@ pub trait BooleanFunctionTester {
     fn is_first_order_correlation_immune(rule_number: &Self::UnsignedRepr) -> bool;
 
     fn fast_walsh_transform(rule_number: &Self::UnsignedRepr, w: u32) -> i32;
+
+    fn absolute_walsh_spectrum(rule_number: &Self::UnsignedRepr) -> HashMap<u32, usize>;
 
     fn is_propagation_criterion_deg_k_ok(rule_number: &Self::UnsignedRepr, k: usize) -> bool;
 

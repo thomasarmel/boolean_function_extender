@@ -1,4 +1,4 @@
-use std::arch::x86_64::_bzhi_u32;
+use std::collections::HashMap;
 use gen_combinations::CombinationIterator;
 use numext_fixed_uint::U512;
 use crate::BooleanFunctionTester;
@@ -8,6 +8,8 @@ pub struct U512Tester;
 impl BooleanFunctionTester for U512Tester {
     type UnsignedRepr = U512;
     const NUM_VARIABLES: usize = 9;
+
+    const MAX_INPUT_VALUE: u32 = 2u32.pow(Self::NUM_VARIABLES as u32) - 1;
 
     fn fast_bool_anf_transform_unsigned(rule_number: &Self::UnsignedRepr, num_variables_function: usize) -> Self::UnsignedRepr {
         const U0: U512 = U512::zero();
@@ -37,8 +39,7 @@ impl BooleanFunctionTester for U512Tester {
 
     fn get_function_degree(rule_number: &Self::UnsignedRepr) -> usize {
         let anf_form = Self::fast_bool_anf_transform_unsigned(rule_number, Self::NUM_VARIABLES);
-        let max_input_value = unsafe { _bzhi_u32(u32::MAX, Self::NUM_VARIABLES as u32) };
-        (0..=max_input_value).into_iter().map(|bit_position| {
+        (0..=Self::MAX_INPUT_VALUE).into_iter().map(|bit_position| {
             if anf_form.clone() & (U512::one() << bit_position) != U512::zero() {
                 bit_position.count_ones() as usize
             } else {
@@ -48,10 +49,9 @@ impl BooleanFunctionTester for U512Tester {
     }
 
     fn is_strict_avalanche_criterion_ok(rule_number: &Self::UnsignedRepr) -> bool {
-        let max_input_value = unsafe { _bzhi_u32(u32::MAX, Self::NUM_VARIABLES as u32) };
         (0..Self::NUM_VARIABLES).into_iter().all(|constant_position| {
             let constant = 1 << constant_position;
-            (0..=max_input_value).into_iter().filter(|&x| {
+            (0..=Self::MAX_INPUT_VALUE).into_iter().filter(|&x| {
                 let x_prime = x ^ constant;
                 Self::compute_cellular_automata_rule(rule_number, x) == Self::compute_cellular_automata_rule(rule_number, x_prime)
             }).count() == (1 << (Self::NUM_VARIABLES - 1))
@@ -60,11 +60,8 @@ impl BooleanFunctionTester for U512Tester {
 
     fn compute_cellular_automata_rule(rule_number: &Self::UnsignedRepr, input_bits: u32) -> bool {
         #[cfg(debug_assertions)]
-        {
-            let max_input_value = unsafe { _bzhi_u32(u32::MAX, Self::NUM_VARIABLES as u32) };
-            if input_bits > max_input_value {
-                panic!("Input bits must be less or equal than {}", max_input_value);
-            }
+        if input_bits > Self::MAX_INPUT_VALUE {
+            panic!("Input bits must be less or equal than {}", Self::MAX_INPUT_VALUE);
         }
         (rule_number & (U512::one() << input_bits)) != U512::zero()
     }
@@ -85,22 +82,31 @@ impl BooleanFunctionTester for U512Tester {
     }
 
     fn fast_walsh_transform(rule_number: &Self::UnsignedRepr, w: u32) -> i32 {
-        let max_input_value = unsafe { _bzhi_u32(u32::MAX, Self::NUM_VARIABLES as u32) };
-        (0..=max_input_value).map(|x| {
-            if Self::compute_cellular_automata_rule(rule_number, x) {
-                if Self::fast_binary_dot_product(w, x as u32) & 1 == 0 { // % modulo 2
-                    1
-                } else {
-                    -1
-                }
+        (0..=Self::MAX_INPUT_VALUE).map(|x| {
+            if (Self::compute_cellular_automata_rule(rule_number, x) as u32 + Self::fast_binary_dot_product(w, x as u32)) & 1 == 0 { // % modulo 2
+                1
             } else {
-                0
+                -1
             }
         }).sum()
     }
 
+    fn absolute_walsh_spectrum(rule_number: &Self::UnsignedRepr) -> HashMap<u32, usize> {
+        let mut absolute_walsh_value_count_map: HashMap<u32, usize> = HashMap::new();
+        (0..=Self::MAX_INPUT_VALUE)
+            .for_each(|w| {
+                let absolute_walsh_value = Self::fast_walsh_transform(rule_number, w).unsigned_abs();
+                if !absolute_walsh_value_count_map.contains_key(&absolute_walsh_value) {
+                    absolute_walsh_value_count_map.insert(absolute_walsh_value, 1);
+                } else {
+                    let count = absolute_walsh_value_count_map.get_mut(&absolute_walsh_value).unwrap();
+                    *count += 1;
+                }
+            });
+        absolute_walsh_value_count_map
+    }
+
     fn is_propagation_criterion_deg_k_ok(rule_number: &Self::UnsignedRepr, k: usize) -> bool {
-        let max_input_value = unsafe { _bzhi_u32(u32::MAX, Self::NUM_VARIABLES as u32) };
         if k == 0 {
             return true;
         }
@@ -120,12 +126,35 @@ impl BooleanFunctionTester for U512Tester {
                     for &bit_position in combination {
                         bit_mask |= (1 << bit_position) as u32;
                     }
-                    let function_equal_mask_count = (0..=max_input_value).into_iter().filter(|&x| {
+                    let function_equal_mask_count = (0..=Self::MAX_INPUT_VALUE).into_iter().filter(|&x| {
                         let x_prime = x ^ bit_mask;
                         Self::compute_cellular_automata_rule(rule_number, x) == Self::compute_cellular_automata_rule(rule_number, x_prime)
                     }).count();
                     function_equal_mask_count == (1 << (Self::NUM_VARIABLES - 1))
                 })
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use numext_fixed_uint::U512;
+    use crate::BooleanFunctionTester;
+
+    #[test]
+    fn test_get_function_degree() {
+        assert_eq!(super::U512Tester::get_function_degree(&U512::zero()), 0);
+        assert_eq!(super::U512Tester::get_function_degree(&U512::from_dec_str("13407807929942597098847186317233203207567774193617110470060917943962159749266320668916332720419656517166240687192852651607093788182615166684716733579591935").unwrap()), 4);
+        assert_eq!(super::U512Tester::get_function_degree(&U512::from_dec_str("13407807929942597098847186317233203207567774193617110470605594638121991820277051203989568509643346170367187143529348261601759818256683210860310861684080895").unwrap()), 5);
+        assert_eq!(super::U512Tester::get_function_degree(&U512::max_value()), 0);
+    }
+
+    #[test]
+    fn test_absolute_walsh_spectrum() {
+        assert_eq!(super::U512Tester::absolute_walsh_spectrum(&U512::zero()), HashMap::from([(512, 1), (0, 511)]));
+        assert_eq!(super::U512Tester::absolute_walsh_spectrum(&U512::from_dec_str("13407807929942597098847186317233203207567774193617110470060917943962159749266320668916332720419656517166240687192852651607093788182615166684716733579591935").unwrap()), HashMap::from([(320, 1), (0, 490), (64, 15), (128, 6)]));
+        assert_eq!(super::U512Tester::absolute_walsh_spectrum(&U512::from_dec_str("13407807929942597098847186317233203207567774193617110470605594638121991820277051203989568509643346170367187143529348261601759818256683210860310861684080895").unwrap()), HashMap::from([(352, 1), (0, 480), (32, 20), (96, 10), (160, 1)]));
+        assert_eq!(super::U512Tester::absolute_walsh_spectrum(&U512::max_value()), HashMap::from([(512, 1), (0, 511)]));
     }
 }
