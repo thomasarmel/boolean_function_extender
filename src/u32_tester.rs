@@ -113,6 +113,33 @@ impl BooleanFunctionTester for U32Tester {
     }
 }
 
+impl U32Tester {
+    pub fn fast_auto_correlation_transform(rule_number: &u32, w: u32) -> i32 {
+        (0..=Self::MAX_INPUT_VALUE).map(|x| {
+            if Self::compute_cellular_automata_rule(rule_number, x) ^ Self::compute_cellular_automata_rule(rule_number, x ^ w) {
+                -1
+            } else {
+                1
+            }
+        }).sum()
+    }
+
+    pub fn absolute_autocorrelation_spectrum(rule_number: &u32) -> HashMap<u32, usize> {
+        let mut absolute_autocorrelation_value_count_map: HashMap<u32, usize> = HashMap::new();
+        (0..=Self::MAX_INPUT_VALUE)
+            .for_each(|w| {
+                let absolute_autocorrelation_value = Self::fast_auto_correlation_transform(rule_number, w).unsigned_abs();
+                if !absolute_autocorrelation_value_count_map.contains_key(&absolute_autocorrelation_value) {
+                    absolute_autocorrelation_value_count_map.insert(absolute_autocorrelation_value, 1);
+                } else {
+                    let count = absolute_autocorrelation_value_count_map.get_mut(&absolute_autocorrelation_value).unwrap();
+                    *count += 1;
+                }
+            });
+        absolute_autocorrelation_value_count_map
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
@@ -132,5 +159,13 @@ mod tests {
         assert_eq!(super::U32Tester::absolute_walsh_spectrum(&3755921403), HashMap::from([(20, 1), (0, 10), (8, 6), (4, 15)]));
         assert_eq!(super::U32Tester::absolute_walsh_spectrum(&3755921407), HashMap::from([(22, 1), (2, 20), (10, 1), (6, 10)]));
         assert_eq!(super::U32Tester::absolute_walsh_spectrum(&4294967295), HashMap::from([(32, 1), (0, 31)]));
+    }
+
+    #[test]
+    fn test_absolute_autocorrelation_spectrum() {
+        assert_eq!(super::U32Tester::absolute_autocorrelation_spectrum(&0), HashMap::from([(32, 32)]));
+        assert_eq!(super::U32Tester::absolute_autocorrelation_spectrum(&3755921403), HashMap::from([(32, 1), (16, 15), (8, 16)]));
+        assert_eq!(super::U32Tester::absolute_autocorrelation_spectrum(&3755921407), HashMap::from([(32, 1), (20, 10), (12, 21)]));
+        assert_eq!(super::U32Tester::absolute_autocorrelation_spectrum(&4294967295), HashMap::from([(32, 32)]));
     }
 }
