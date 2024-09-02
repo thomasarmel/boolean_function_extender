@@ -10,6 +10,7 @@ impl BooleanFunctionTester for U512Tester {
     const NUM_VARIABLES: usize = 9;
 
     const MAX_INPUT_VALUE: u32 = 2u32.pow(Self::NUM_VARIABLES as u32) - 1;
+    const MAX_FUNCTION_NUMBER: Self::UnsignedRepr = U512::max_value();
 
     fn fast_bool_anf_transform_unsigned(rule_number: &Self::UnsignedRepr, num_variables_function: usize) -> Self::UnsignedRepr {
         const U0: U512 = U512::zero();
@@ -133,6 +134,28 @@ impl BooleanFunctionTester for U512Tester {
                     function_equal_mask_count == (1 << (Self::NUM_VARIABLES - 1))
                 })
         })
+    }
+
+    fn is_function_linear(rule_number: &Self::UnsignedRepr) -> bool {
+        [rule_number.clone(), Self::reverse_function(rule_number)].iter().any(|rule| {
+            let mut equivalent_xor_function: U512 = U512::zero();
+            for i in 0..=Self::MAX_INPUT_VALUE {
+                let mut equivalent_xor_function_eval_i = false;
+                for j in 0..Self::NUM_VARIABLES {
+                    if rule & (U512::one() << (1 << j)) != U512::zero() {
+                        equivalent_xor_function_eval_i ^= (i & (1 << j)) == 0;
+                    }
+                }
+                equivalent_xor_function |= U512::from(equivalent_xor_function_eval_i as u32) << i;
+            }
+            *rule == equivalent_xor_function || *rule == Self::reverse_function(&equivalent_xor_function)
+        })
+    }
+}
+
+impl U512Tester {
+    fn reverse_function(rule_number: &U512) -> U512 {
+        !rule_number & Self::MAX_FUNCTION_NUMBER
     }
 }
 

@@ -11,20 +11,20 @@ const RING_SIZE: usize = 9;
 const EQUIVALENCE_CLASSES: [u32; 48] = [0xaa55aa55, 0xaa55ab55, 0xaa55bb55, 0xaa5dbb55, 0xaaddbb55, 0xaa5dbb51, 0x2a5dbb51, 0xaaddbb51, 0x2a5dbf51, 0x6a5dbb51, 0x2addbb51, 0xa8ddbb51, 0xaeddda51, 0x0a5dbf51, 0x8addda51, 0xa8dd9b51, 0x88ddbb51, 0x88ddbb11, 0x8c5dda51, 0xa89d9b51, 0x8eddda51, 0xaefdda51, 0x025dbf51, 0x88ddda51, 0x88dd9b51, 0xceddda51, 0x0eddda51, 0x425dbf51, 0x8cddda51, 0x88dddb51, 0x289d9b51, 0x86fdda51, 0x88dddb71, 0xcefdda51, 0x0efdda51, 0x288d9b51, 0x8cfdda51, 0x8cdddb51, 0x8ccdda51, 0x289d9b41, 0x488ddb51, 0xccfdda51, 0x688d9b51, 0x288d9b41, 0x288d1b41, 0xdcfdda51, 0x68ad9b51, 0x688ddb51];
 
 fn main() {
-    // SAC, 1st order CI, balanced, prop crit 2, prop crit 3, prop 4, prop 5
-    let mut classes_eq_count: Vec<(u32, HashMap<u32, usize>, HashMap<u32, usize>, Arc<Mutex<usize>>, Arc<Mutex<usize>>, Arc<Mutex<usize>>, Arc<Mutex<usize>>, Arc<Mutex<usize>>, Arc<Mutex<usize>>, Arc<Mutex<usize>>)> = Vec::new();
+    // linearity
+    let mut classes_eq_count: Vec<(u32, HashMap<u32, usize>, HashMap<u32, usize>, Arc<Mutex<usize>>)> = Vec::new();
 
     for eq in EQUIVALENCE_CLASSES {
         let walsh_spectrum_eq = U32Tester::absolute_walsh_spectrum(&eq);
         let autocorrelation_spectrum_eq = U32Tester::absolute_autocorrelation_spectrum(&eq);
-        classes_eq_count.push((eq, walsh_spectrum_eq, autocorrelation_spectrum_eq, Arc::new(Mutex::new(0)), Arc::new(Mutex::new(0)), Arc::new(Mutex::new(0)), Arc::new(Mutex::new(0)), Arc::new(Mutex::new(0)), Arc::new(Mutex::new(0)), Arc::new(Mutex::new(0))));
+        classes_eq_count.push((eq, walsh_spectrum_eq, autocorrelation_spectrum_eq, Arc::new(Mutex::new(0))));
     }
 
     (0..=u32::MAX).into_par_iter().for_each(|rule_number| {
         let walsh_spectrum = U32Tester::absolute_walsh_spectrum(&rule_number);
         let autocorrelation_spectrum = U32Tester::absolute_autocorrelation_spectrum(&rule_number);
         let output_9_rule_number = extend_rule_5_to_9(rule_number);
-        let mut equivalent_class_index = 0;
+        let mut equivalent_class_index = 1000;
         for (index, eq) in classes_eq_count.iter().enumerate() {
             let walsh_spectrum_eq = &eq.1;
             let autocorrelation_spectrum_eq = &eq.2;
@@ -34,63 +34,15 @@ fn main() {
             }
         }
 
-        if U512Tester::is_strict_avalanche_criterion_ok(&output_9_rule_number) == U32Tester::is_strict_avalanche_criterion_ok(&rule_number) {
+        if U512Tester::is_function_linear(&output_9_rule_number) == U32Tester::is_function_linear(&rule_number) {
             *classes_eq_count[equivalent_class_index].3.lock().unwrap() += 1;
-        }
-        if U512Tester::is_first_order_correlation_immune(&output_9_rule_number) == U32Tester::is_first_order_correlation_immune(&rule_number) {
-            *classes_eq_count[equivalent_class_index].4.lock().unwrap() += 1;
-        }
-        if U512Tester::is_function_balanced(&output_9_rule_number) == U32Tester::is_function_balanced(&rule_number) {
-            *classes_eq_count[equivalent_class_index].5.lock().unwrap() += 1;
-        }
-        if U512Tester::is_propagation_criterion_deg_k_ok(&output_9_rule_number, 2) == U32Tester::is_propagation_criterion_deg_k_ok(&rule_number, 2) {
-            *classes_eq_count[equivalent_class_index].6.lock().unwrap() += 1;
-        }
-        if U512Tester::is_propagation_criterion_deg_k_ok(&output_9_rule_number, 3) == U32Tester::is_propagation_criterion_deg_k_ok(&rule_number, 3) {
-            *classes_eq_count[equivalent_class_index].7.lock().unwrap() += 1;
-        }
-        if U512Tester::is_propagation_criterion_deg_k_ok(&output_9_rule_number, 4) == U32Tester::is_propagation_criterion_deg_k_ok(&rule_number, 4) {
-            *classes_eq_count[equivalent_class_index].8.lock().unwrap() += 1;
-        }
-        if U512Tester::is_propagation_criterion_deg_k_ok(&output_9_rule_number, 5) == U32Tester::is_propagation_criterion_deg_k_ok(&rule_number, 5) {
-            *classes_eq_count[equivalent_class_index].9.lock().unwrap() += 1;
         }
     });
 
     println!("-----------------------------------");
-    println!("SAC:");
+    println!("Linearity:");
     for eq in &classes_eq_count {
         println!("{:#02x} -> {}", eq.0, eq.3.lock().unwrap());
-    }
-    println!("-----------------------------------");
-    println!("1st order CI:");
-    for eq in &classes_eq_count {
-        println!("{:#02x} -> {}", eq.0, eq.4.lock().unwrap());
-    }
-    println!("-----------------------------------");
-    println!("Balanced:");
-    for eq in &classes_eq_count {
-        println!("{:#02x} -> {}", eq.0, eq.5.lock().unwrap());
-    }
-    println!("-----------------------------------");
-    println!("Prop crit 2:");
-    for eq in &classes_eq_count {
-        println!("{:#02x} -> {}", eq.0, eq.6.lock().unwrap());
-    }
-    println!("-----------------------------------");
-    println!("Prop crit 3:");
-    for eq in &classes_eq_count {
-        println!("{:#02x} -> {}", eq.0, eq.7.lock().unwrap());
-    }
-    println!("-----------------------------------");
-    println!("Prop crit 4:");
-    for eq in &classes_eq_count {
-        println!("{:#02x} -> {}", eq.0, eq.8.lock().unwrap());
-    }
-    println!("-----------------------------------");
-    println!("Prop crit 5:");
-    for eq in &classes_eq_count {
-        println!("{:#02x} -> {}", eq.0, eq.9.lock().unwrap());
     }
 }
 

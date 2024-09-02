@@ -8,6 +8,7 @@ impl BooleanFunctionTester for U32Tester {
     type UnsignedRepr = u32;
     const NUM_VARIABLES: usize = 5;
     const MAX_INPUT_VALUE: u32 = 2u32.pow(Self::NUM_VARIABLES as u32) - 1;
+    const MAX_FUNCTION_NUMBER: Self::UnsignedRepr = u32::MAX;
 
     fn fast_bool_anf_transform_unsigned(rule_number: &Self::UnsignedRepr, num_variables_function: usize) -> Self::UnsignedRepr {
         fast_boolean_anf_transform::fast_bool_anf_transform_unsigned(*rule_number, num_variables_function)
@@ -111,6 +112,22 @@ impl BooleanFunctionTester for U32Tester {
                 })
         })
     }
+
+    fn is_function_linear(rule_number: &Self::UnsignedRepr) -> bool {
+        [*rule_number, Self::reverse_function(*rule_number)].iter().any(|rule| {
+            let mut equivalent_xor_function: u32 = 0;
+            for i in 0..=Self::MAX_INPUT_VALUE {
+                let mut equivalent_xor_function_eval_i = false;
+                for j in 0..Self::NUM_VARIABLES {
+                    if *rule & (1 << (1 << j)) != 0 {
+                        equivalent_xor_function_eval_i ^= (i & (1 << j)) == 0;
+                    }
+                }
+                equivalent_xor_function |= (equivalent_xor_function_eval_i as u32) << i;
+            }
+            *rule == equivalent_xor_function || *rule == Self::reverse_function(equivalent_xor_function)
+        })
+    }
 }
 
 impl U32Tester {
@@ -137,6 +154,10 @@ impl U32Tester {
                 }
             });
         absolute_autocorrelation_value_count_map
+    }
+
+    fn reverse_function(rule_number: u32) -> u32 {
+        !rule_number & Self::MAX_FUNCTION_NUMBER
     }
 }
 

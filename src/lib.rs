@@ -10,6 +10,8 @@ pub trait BooleanFunctionTester {
     const NUM_VARIABLES: usize;
     const MAX_INPUT_VALUE: u32;
 
+    const MAX_FUNCTION_NUMBER: Self::UnsignedRepr;
+
     fn fast_bool_anf_transform_unsigned(rule_number: &Self::UnsignedRepr, num_variables_function: usize) -> Self::UnsignedRepr;
 
     fn get_function_degree(rule_number: &Self::UnsignedRepr) -> usize;
@@ -27,6 +29,8 @@ pub trait BooleanFunctionTester {
     fn absolute_walsh_spectrum(rule_number: &Self::UnsignedRepr) -> HashMap<u32, usize>;
 
     fn is_propagation_criterion_deg_k_ok(rule_number: &Self::UnsignedRepr, k: usize) -> bool;
+
+    fn is_function_linear(rule_number: &Self::UnsignedRepr) -> bool;
 
     #[inline]
     fn fast_binary_dot_product(a: u32, b: u32) -> u32 {
